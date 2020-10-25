@@ -1,34 +1,59 @@
 import time
-
 from selenium import webdriver
-
-driver = webdriver.Firefox()
-
-# happy case - item is available
-driver.get("https://www.bestbuy.com/site/nvidia-titan-rtx-24gb-gddr6-pci-express-3-0-graphics-card/6320585.p?skuId=6320585")
+import pagerduty
 
 
-# driver.get("https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440")
+class PagePoller:
+    def __init__(self, url):
+        self.url = url
+        self.driver = webdriver.Firefox()
+        self.driver.get(url)
 
-foundButton = False
+    def checkAvailable(self):
+        addToCartButton = addButton = self.driver.find_element_by_class_name("add-to-cart-button")
+        if ("btn-disabled" in addToCartButton.get_attribute("class")):
+            return False
+        else:
+            addToCartButton.click()
+            return True
 
-while not foundButton:
-
-    addToCartButton = addButton = driver.find_element_by_class_name("add-to-cart-button")
-
-    if ("btn-disabled" in addToCartButton.get_attribute("class")):
-        # delay or wait for some time between tries. ~3
-        time.sleep(3)
-
-        # refresh the page
-        driver.refresh()
-
-    else:
-        foundButton = True
-
+    def refreshPage(self):
+        self.driver.refresh()
 
 
-addToCartButton.click()
+textFile = open("bestbuy-links1.txt", "r")
+lines = textFile.readlines()
+print(lines)
+
+pages = []
+for u in lines:
+    pages.append(PagePoller(u))
+
+while True:
+    toRemove = []
+    for p in pages:
+        if (p.checkAvailable()):
+            pagerduty.sendPagerDutyAlert()
+            toRemove.append(p)
+        else:
+            p.refreshPage()
+
+    for p in toRemove:
+        pages.remove(p)
+
+    time.sleep(3)
+
+
+
+#
+# #driver = webdriver.Firefox()
+#
+# # happy case - item is available
+# #driver.get("https://www.bestbuy.com/site/nvidia-titan-rtx-24gb-gddr6-pci-express-3-0-graphics-card/6320585.p?skuId=6320585")
+#
+#
+# #driver.get("https://www.bestbuy.com/site/nvidia-geforce-rtx-3080-10gb-gddr6x-pci-express-4-0-graphics-card-titanium-and-black/6429440.p?skuId=6429440")
+#
 
 
 # good
