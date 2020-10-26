@@ -10,18 +10,34 @@ class PagePoller:
         self.driver.get(url)
 
     def checkAvailable(self):
-        addToCartButton = addButton = self.driver.find_element_by_class_name("add-to-cart-button")
-        if ("btn-disabled" in addToCartButton.get_attribute("class")):
+        try:
+            addToCartButton = addButton = self.driver.find_element_by_class_name("add-to-cart-button")
+            if ("btn-disabled" in addToCartButton.get_attribute("class")):
+                return False
+            else:
+                addToCartButton.click()
+                return True
+        except:
+            self.recreateBrowser()
             return False
-        else:
-            addToCartButton.click()
-            return True
+
+    def recreateBrowser(self):
+        try:
+            self.driver.close()
+            self.driver = webdriver.Firefox()
+            self.driver.get(self.url)
+        except:
+            self.driver = webdriver.Firefox()
+            self.driver.get(self.url)
 
     def refreshPage(self):
-        self.driver.refresh()
+        try:
+            self.driver.refresh()
+        except:
+            self.recreateBrowser()
 
 
-textFile = open("bestbuy-links1.txt", "r")
+textFile = open("bestbuy-links.txt", "r")
 lines = textFile.readlines()
 print(lines)
 
